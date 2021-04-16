@@ -8,7 +8,7 @@ describe('Protected endpoints', function () {
 
   const { testUsers, testThings, testReviews } = helpers.makeThingsFixtures();
 
-  before('make knext instance', () => {
+  before('make knex instance', () => {
     db = knex({
       client: 'pg',
       connection: process.env.TEST_DB_URL,
@@ -40,6 +40,11 @@ describe('Protected endpoints', function () {
     {
       name: 'POST /api/reviews',
       path: '/api/reviews',
+      method: supertest(app).post,
+    },
+    {
+      name: 'POST /api/auth/refresh',
+      path: '/api/auth/refresh',
       method: supertest(app).post,
     },
   ];

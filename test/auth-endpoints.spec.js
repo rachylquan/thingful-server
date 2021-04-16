@@ -35,7 +35,7 @@ describe('Auth Endpoints', function () {
         password: testUser.password,
       };
 
-      it(`responds with 400 required error when ${field} is missing`, () => {
+      it(`responds with 400 required error when '${field}' is missing`, () => {
         delete loginAttemptBody[field];
 
         return supertest(app)
@@ -47,9 +47,8 @@ describe('Auth Endpoints', function () {
       });
     });
 
-    it(`responds 400 'invlaid user_name or password' when bad user_name`, () => {
+    it(`responds 400 'invalid user_name or password' when bad user_name`, () => {
       const userInvalidUser = { user_name: 'user-not', password: 'existy' };
-
       return supertest(app)
         .post('/api/auth/login')
         .send(userInvalidUser)
@@ -72,19 +71,41 @@ describe('Auth Endpoints', function () {
         user_name: testUser.user_name,
         password: testUser.password,
       };
-
       const expectedToken = jwt.sign(
-        { user_id: testUser.id }, // payload
+        { user_id: testUser.id },
         process.env.JWT_SECRET,
         {
           subject: testUser.user_name,
+          expiresIn: process.env.JWT_EXPIRY,
+          algorithm: 'HS256',
+        }
+      );
+      return supertest(app)
+        .post('/api/auth/login')
+        .send(userValidCreds)
+        .expect(200, {
+          authToken: expectedToken,
+        });
+    });
+  });
+
+  describe(`POST /api/auth/refresh`, () => {
+    beforeEach('insert users', () => helpers.seedUsers(db, testUsers));
+
+    it(`responds 200 and JWT aut token using secret`, () => {
+      const expectedToken = jwt.sign(
+        { user_id: testUser.id },
+        process.env.JWT_SECRET,
+        {
+          subject: testUser.user_name,
+          expiresIn: process.env.JWT_EXPIRY,
           algorithm: 'HS256',
         }
       );
 
       return supertest(app)
-        .post('/api/auth/login')
-        .send(userValidCreds)
+        .post('/api/auth/refresh')
+        .set('Authorization', helpers.makeAuthHeader(testUser))
         .expect(200, {
           authToken: expectedToken,
         });
